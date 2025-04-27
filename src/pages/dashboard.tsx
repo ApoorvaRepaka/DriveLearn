@@ -5,7 +5,7 @@ import VoiceInput from '@/components/dashb/VoiceInput';
 import ResponseDisplay from '@/components/dashb/ResponseDisplay';
 import axios from 'axios';
 import { useRouter } from 'next/router';
-import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
+import { PaperAirplaneIcon, ArrowPathIcon } from '@heroicons/react/24/solid';
 
 export default function Home() {
   const [manualQuestion, setManualQuestion] = useState('');
@@ -14,8 +14,9 @@ export default function Home() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
-
   const [showHistory, setShowHistory] = useState(false);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const router = useRouter();
 
@@ -25,7 +26,6 @@ export default function Home() {
       alert('User not logged in. Redirecting to login page.');
       router.push('/login');
     }
-
     router.prefetch('/login');
   }, [router]);
 
@@ -33,7 +33,7 @@ export default function Home() {
     setError('');
     setIsLoading(true);
 
-    const questionToSend = manualQuestion || voiceTranscript; // Prioritize manual input
+    const questionToSend = manualQuestion || voiceTranscript;
 
     if (!questionToSend.trim()) {
       setError('Please enter a question!');
@@ -60,10 +60,20 @@ export default function Home() {
     }
   };
 
-  const handleLogout = () => {
+ const handleLogout = async () => {
+  setIsLoggingOut(true);
+  try {
     localStorage.removeItem('userId');
-    router.replace('/');
-  };
+    setTimeout(() => {
+      router.replace('/');
+    }, 500); // Wait for 500ms before redirecting to show the loader
+  } catch (err) {
+    console.error('Logout error:', err);
+    alert('Failed to logout. Try again.');
+    setIsLoggingOut(false);
+  }
+};
+
 
   const toggleHistory = async () => {
     const userId = localStorage.getItem('userId');
@@ -74,15 +84,17 @@ export default function Home() {
     }
 
     if (!showHistory) {
+      setIsHistoryLoading(true);
       try {
         const res = await axios.post('/api/history', { userId });
         setHistory(res.data.data.history);
       } catch (err) {
         console.error('Error fetching history:', err);
         alert('Failed to load history.');
+      } finally {
+        setIsHistoryLoading(false);
       }
     }
-
     setShowHistory((prev) => !prev);
   };
 
@@ -90,26 +102,33 @@ export default function Home() {
     <div className="min-h-screen flex flex-col items-center px-8 sm:px-12 md:px-20 lg:px-32 xl:px-40 bg-gradient-to-b from-[#f9f6e7] to-white w-full">
       <main className="relative max-w-5xl w-full bg-white shadow-lg p-8 rounded-lg mt-12 sm:mt-16 space-y-6">
         <div className="absolute top-4 left-0 right-0 flex justify-between px-8 w-full">
-          {/* History Button - Left End */}
+
+          {/* History Button */}
           <button
             onClick={toggleHistory}
+            disabled={isHistoryLoading}
             className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-all w-[140px] h-[40px] flex items-center justify-center text-sm sm:text-base"
           >
-            {showHistory ? 'Hide History' : 'Show History'}
+            {isHistoryLoading ? (
+              <ArrowPathIcon className="w-5 h-5 animate-spin text-white" />
+            ) : (
+              showHistory ? 'Hide History' : 'Show History'
+            )}
           </button>
 
-          {/* Logout Button - Right End */}
+          {/* Logout Button (now Green) */}
           <button
             onClick={handleLogout}
-            className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-all w-[140px] h-[40px] flex items-center justify-center text-sm sm:text-base"
+            disabled={isLoggingOut}
+            className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-all w-[140px] h-[40px] flex items-center justify-center text-sm sm:text-base"
           >
-            Logout
+            {isLoggingOut ? (
+              <ArrowPathIcon className="w-5 h-5 animate-spin text-white" />
+            ) : (
+              'Logout'
+            )}
           </button>
         </div>
-
-
-
-
 
         <h1 className="text-3xl sm:text-4xl font-bold text-center">📘 AI Tutor</h1>
 
@@ -117,7 +136,7 @@ export default function Home() {
         {showHistory && (
           <div className="bg-gray-100 p-4 rounded-lg shadow-md mt-4">
             <h2 className="text-xl font-semibold mb-2">📜 Previous Questions</h2>
-            {history && history.length > 0 ? (
+            {history.length > 0 ? (
               <ul className="list-disc list-inside space-y-1">
                 {history.map((q, index) => (
                   <li key={index} className="text-gray-700">{q}</li>
@@ -127,7 +146,6 @@ export default function Home() {
               <p className="text-gray-500">No previous questions yet.</p>
             )}
           </div>
-
         )}
 
         {/* Input + Send Button */}
@@ -143,9 +161,10 @@ export default function Home() {
             <PaperAirplaneIcon className="w-6 h-6 text-white" />
           </button>
         </div>
+
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        {/* Voice Input Component */}
+        {/* Voice Input */}
         <VoiceInput setVoiceTranscript={setVoiceTranscript} />
 
         {/* Transcript Display */}
@@ -155,6 +174,7 @@ export default function Home() {
           </p>
         </div>
 
+        {/* AI Response Display */}
         <ResponseDisplay answer={answer} isLoading={isLoading} />
       </main>
     </div>

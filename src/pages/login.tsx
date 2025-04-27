@@ -6,6 +6,7 @@ import Head from 'next/head';
 import MainButton from '@/components/elements/button/MainButton';
 import TextField from '@mui/material/TextField';
 import Link from 'next/link';
+import { useState } from 'react';
 
 const validationSchema = yup.object({
   email: yup.string().email('Enter a valid email').required('Email is required'),
@@ -13,12 +14,15 @@ const validationSchema = yup.object({
 });
 
 const Login = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  
   const router = useRouter();
 
   const formik = useFormik({
     initialValues: { email: '', password: '' },
     validationSchema: validationSchema,
     onSubmit: async (values) => {
+      setIsLoading(true); // Set loading to true when form submission starts
       try {
         const res = await fetch('/api/login', {
           method: 'POST',
@@ -73,7 +77,11 @@ const Login = () => {
               />
             ))}
 
-            <MainButton text="Login" />
+            <MainButton
+              text={isLoading ? 'Logging In...' : 'Log In'}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-all"
+              disabled={isLoading}
+            />
             <p className="text-sm mt-4">New Here? Create an Account! <Link href="/SignUp" className="text-blue-600 hover:underline">Sign Up</Link></p>
           </form>
         </div>

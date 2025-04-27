@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react'; // useState is already imported here
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import Head from 'next/head';
@@ -15,10 +15,12 @@ const validationSchema = yup.object({
 });
 
 const Signup = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const formik = useFormik({
     initialValues: { name: '', email: '', password: '', confirmPassword: '', board: '' },
     validationSchema: validationSchema,
     onSubmit: async (values) => {
+      setIsLoading(true); // Set loading to true when form submission starts
       try {
         const res = await fetch('/api/signup', {
           method: 'POST',
@@ -30,6 +32,9 @@ const Signup = () => {
         else alert((await res.json()).message || 'Signup failed');
       } catch (err) {
         console.error('Signup error:', err);
+      }
+      finally {
+        setIsLoading(false); // Set loading to false when the request finishes
       }
     },
   });
@@ -87,7 +92,11 @@ const Signup = () => {
               )}
             </div>
 
-            <MainButton text="Sign Up" className="w-full py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-all" />
+            <MainButton
+              text={isLoading ? 'Signing Up...' : 'Sign Up'}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-all"
+              disabled={isLoading}
+            />
 
             {/* Login Link */}
             <p className="text-sm text-center mt-4">
