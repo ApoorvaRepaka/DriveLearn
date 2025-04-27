@@ -15,37 +15,40 @@ const pool = new Pool({
   },
 });
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const referer = process.env.REFERER_URL || 'http://localhost:3000';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// Function to fetch AI response using only Gemini API
+// Function to fetch AI response from Gemini
 async function fetchAIResponse(prompt: string): Promise<string> {
-  if (!GEMINI_API_KEY) {
-    return 'Error: Gemini API key is missing.';
-  }
-
   try {
-    console.log(`Trying Gemini API key...`);
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      }),
-    });
+    console.log(`Fetching response from Gemini for prompt: "${prompt}"`);
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }]
+        }),
+      }
+    );
 
-    if (geminiRes.ok) {
-      const data = await geminiRes.json();
-      console.log('Gemini API response:', data);
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No answer received from Gemini.';
-    } else {
-      console.warn(`Gemini API failed:`, await geminiRes.text());
+    if (!geminiRes.ok) {
+      console.warn(`Gemini API request failed:`, await geminiRes.text());
+      return 'Error: Gemini API request failed.';
     }
-  } catch (err) {
-    console.error('Error using Gemini API:', err);
-  }
 
-  return 'Error: Gemini API failed.';
+    const data = await geminiRes.json();
+    console.log('Gemini API response:', JSON.stringify(data, null, 2));
+
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? 'Error: Unexpected response format.';
+  } catch (err) {
+    console.error(`Error using Gemini API:`, err);
+    return 'Error: Unable to fetch AI response.';
+  }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -64,7 +67,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const user = userResult.rows[0];
     const prompt = `You are a tutor for the ${user.board} board. Provide a simple and clear explanation for the following question without using extra formatting like bold (**), hashtags (#), or special characters: ${question}`;
-
+    
+    // Fetch AI response using Gemini API
     const answer = await fetchAIResponse(prompt);
 
     await pool.query(

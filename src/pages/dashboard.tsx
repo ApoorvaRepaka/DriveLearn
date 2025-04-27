@@ -5,13 +5,16 @@ import VoiceInput from '@/components/dashb/VoiceInput';
 import ResponseDisplay from '@/components/dashb/ResponseDisplay';
 import axios from 'axios';
 import { useRouter } from 'next/router';
+import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
 
 export default function Home() {
-  const [question, setQuestion] = useState('');
+  const [manualQuestion, setManualQuestion] = useState('');
+  const [voiceTranscript, setVoiceTranscript] = useState('');
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
+
   const [showHistory, setShowHistory] = useState(false);
 
   const router = useRouter();
@@ -30,7 +33,9 @@ export default function Home() {
     setError('');
     setIsLoading(true);
 
-    if (!question.trim()) {
+    const questionToSend = manualQuestion || voiceTranscript; // Prioritize manual input
+
+    if (!questionToSend.trim()) {
       setError('Please enter a question!');
       setIsLoading(false);
       return;
@@ -45,8 +50,7 @@ export default function Home() {
     }
 
     try {
-      const res = await axios.post('/api/ask', { question, userId });
-
+      const res = await axios.post('/api/ask', { question: questionToSend, userId });
       setAnswer(res.data.answer);
     } catch (err) {
       console.error('Error:', err);
@@ -72,15 +76,7 @@ export default function Home() {
     if (!showHistory) {
       try {
         const res = await axios.post('/api/history', { userId });
-        console.log('Full API Response:', res.data); // Debugging log
-
-        if (res.data.success && Array.isArray(res.data.data?.history)) {
-          console.log('History:', res.data.data.history);
-          setHistory(res.data.data.history);
-        } else {
-          console.log('No history found.');
-          setHistory([]);
-        }
+        setHistory(res.data.data.history);
       } catch (err) {
         console.error('Error fetching history:', err);
         alert('Failed to load history.');
@@ -88,38 +84,41 @@ export default function Home() {
     }
 
     setShowHistory((prev) => !prev);
-};
-
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center px-8 sm:px-12 md:px-20 lg:px-32 xl:px-40 bg-gradient-to-b from-[#f9f6e7] to-white w-full">
       <main className="relative max-w-5xl w-full bg-white shadow-lg p-8 rounded-lg mt-12 sm:mt-16 space-y-6">
-
-        {/* Top Buttons - Logout & History */}
-        <div className="flex justify-between">
+        <div className="absolute top-4 left-0 right-0 flex justify-between px-8 w-full">
+          {/* History Button - Left End */}
           <button
             onClick={toggleHistory}
-            className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-all shadow-md"
+            className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-all w-[140px] h-[40px] flex items-center justify-center text-sm sm:text-base"
           >
             {showHistory ? 'Hide History' : 'Show History'}
           </button>
 
+          {/* Logout Button - Right End */}
           <button
             onClick={handleLogout}
-            className="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 transition-all shadow-md"
+            className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-all w-[140px] h-[40px] flex items-center justify-center text-sm sm:text-base"
           >
             Logout
           </button>
         </div>
 
+
+
+
+
         <h1 className="text-3xl sm:text-4xl font-bold text-center">📘 AI Tutor</h1>
 
         {/* History Panel */}
         {showHistory && (
-          <div className="bg-gray-100 p-6 rounded shadow">
-            <h2 className="text-xl font-semibold mb-3">📜 Previous Questions</h2>
-            {Array.isArray(history) && history.length > 0 ? (
-              <ul className="list-disc list-inside space-y-2">
+          <div className="bg-gray-100 p-4 rounded-lg shadow-md mt-4">
+            <h2 className="text-xl font-semibold mb-2">📜 Previous Questions</h2>
+            {history && history.length > 0 ? (
+              <ul className="list-disc list-inside space-y-1">
                 {history.map((q, index) => (
                   <li key={index} className="text-gray-700">{q}</li>
                 ))}
@@ -128,31 +127,33 @@ export default function Home() {
               <p className="text-gray-500">No previous questions yet.</p>
             )}
           </div>
+
         )}
 
-        {/* Input Area */}
-        <textarea
-          placeholder="Ask your question here..."
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          className="w-full p-4 border rounded-md focus:ring focus:ring-blue-300 text-base sm:text-lg"
-          rows={4}
-        />
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-
-        <VoiceInput setQuestion={setQuestion} />
-
-        <div className="flex justify-center">
-          <button
-            onClick={handleAsk}
-            className="w-3/4 bg-blue-600 text-white py-3 rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-300"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Generating...' : 'Ask Question'}
+        {/* Input + Send Button */}
+        <div className="flex items-center border rounded-md p-3 bg-gray-100">
+          <textarea
+            placeholder="Ask your question here..."
+            value={manualQuestion}
+            onChange={(e) => setManualQuestion(e.target.value)}
+            className="flex-grow resize-none border-none bg-transparent outline-none focus:ring-0 text-base sm:text-lg h-10"
+            rows={1}
+          />
+          <button onClick={handleAsk} className="bg-blue-600 text-white p-2 rounded-lg shadow-md hover:bg-blue-700 transition-all">
+            <PaperAirplaneIcon className="w-6 h-6 text-white" />
           </button>
         </div>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
 
+        {/* Voice Input Component */}
+        <VoiceInput setVoiceTranscript={setVoiceTranscript} />
 
+        {/* Transcript Display */}
+        <div className="mt-4 bg-gray-100 p-4 rounded-lg shadow-md text-gray-700">
+          <p className="text-sm sm:text-base whitespace-pre-wrap font-medium">
+            {voiceTranscript || "Your voice input will appear here..."}
+          </p>
+        </div>
 
         <ResponseDisplay answer={answer} isLoading={isLoading} />
       </main>

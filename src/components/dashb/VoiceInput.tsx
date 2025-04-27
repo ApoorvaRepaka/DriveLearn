@@ -4,10 +4,10 @@ import React, { useEffect, useState } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 type Props = {
-  setQuestion: (text: string) => void;
+  setVoiceTranscript: (text: string) => void;
 };
 
-export default function VoiceInput({ setQuestion }: Props) {
+export default function VoiceInput({ setVoiceTranscript }: Props) {
   const [isClient, setIsClient] = useState(false);
 
   const {
@@ -22,16 +22,16 @@ export default function VoiceInput({ setQuestion }: Props) {
   }, []);
 
   useEffect(() => {
-    if (listening) {
-      setQuestion(transcript);
+    if (listening && transcript.trim()) {
+      setVoiceTranscript(transcript);
     }
-  }, [transcript, listening, setQuestion]);
+  }, [transcript, listening, setVoiceTranscript]);
 
   const handleStart = () => {
     try {
       resetTranscript();
-      setQuestion('');
-      SpeechRecognition.startListening({ continuous: true }); // Start listening
+      setVoiceTranscript('');
+      SpeechRecognition.startListening({ continuous: true });
     } catch (error) {
       console.error('Error starting listening:', error);
     }
@@ -40,7 +40,7 @@ export default function VoiceInput({ setQuestion }: Props) {
   const handleStop = () => {
     try {
       SpeechRecognition.stopListening();
-      setQuestion(transcript);
+      setVoiceTranscript(transcript);
     } catch (error) {
       console.error('Error stopping listening:', error);
     }
