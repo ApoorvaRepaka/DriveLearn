@@ -3,6 +3,7 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import {ArrowPathIcon } from '@heroicons/react/24/solid';
 import MainButton from '@/components/elements/button/MainButton';
 import TextField from '@mui/material/TextField';
 import Link from 'next/link';
@@ -78,7 +79,7 @@ const Login = () => {
             ))}
 
             <MainButton
-              text={isLoading ? 'Logging In...' : 'Log In'}
+              text={isLoading ? <ArrowPathIcon className="w-5 h-5 animate-spin text-white" /> : 'Log In'}
               className="w-full py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-all"
               disabled={isLoading}
             />

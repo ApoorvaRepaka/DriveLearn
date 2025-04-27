@@ -60,43 +60,31 @@ export default function Home() {
     }
   };
 
- const handleLogout = async () => {
-  setIsLoggingOut(true);
-  try {
-    localStorage.removeItem('userId');
-    setTimeout(() => {
-      router.replace('/');
-    }, 500); // Wait for 500ms before redirecting to show the loader
-  } catch (err) {
-    console.error('Logout error:', err);
-    alert('Failed to logout. Try again.');
-    setIsLoggingOut(false);
-  }
-};
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      localStorage.removeItem('userId');
+      setTimeout(() => {
+        router.replace('/');
+      }, 500); // Wait for 500ms before redirecting to show the loader
+    } catch (err) {
+      console.error('Logout error:', err);
+      alert('Failed to logout. Try again.');
+      setIsLoggingOut(false);
+    }
+  };
 
 
   const toggleHistory = async () => {
-    const userId = localStorage.getItem('userId');
-    if (!userId) {
-      alert('User not logged in.');
-      router.push('/login');
-      return;
-    }
-
-    if (!showHistory) {
-      setIsHistoryLoading(true);
-      try {
-        const res = await axios.post('/api/history', { userId });
-        setHistory(res.data.data.history);
-      } catch (err) {
-        console.error('Error fetching history:', err);
-        alert('Failed to load history.');
-      } finally {
-        setIsHistoryLoading(false);
-      }
-    }
-    setShowHistory((prev) => !prev);
+    setIsHistoryLoading(true); // Start loading state
+    
+    // Simulate minimal delay for UX (optional)
+    setTimeout(() => {
+      router.push('/history'); // Redirects to History page
+      setIsHistoryLoading(false); // Stop loading state after redirection
+    }, 500); // Adjust time as needed
   };
+  
 
   return (
     <div className="min-h-screen flex flex-col items-center px-8 sm:px-12 md:px-20 lg:px-32 xl:px-40 bg-gradient-to-b from-[#f9f6e7] to-white w-full">
@@ -120,7 +108,7 @@ export default function Home() {
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-all w-[140px] h-[40px] flex items-center justify-center text-sm sm:text-base"
+            className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-all w-[140px] h-[40px] flex items-center justify-center text-sm sm:text-base"
           >
             {isLoggingOut ? (
               <ArrowPathIcon className="w-5 h-5 animate-spin text-white" />
@@ -157,9 +145,19 @@ export default function Home() {
             className="flex-grow resize-none border-none bg-transparent outline-none focus:ring-0 text-base sm:text-lg h-10"
             rows={1}
           />
-          <button onClick={handleAsk} className="bg-blue-600 text-white p-2 rounded-lg shadow-md hover:bg-blue-700 transition-all">
-            <PaperAirplaneIcon className="w-6 h-6 text-white" />
+          <button
+            onClick={handleAsk}
+            disabled={isLoading}
+            className={`bg-blue-600 text-white p-2 rounded-lg shadow-md transition-all ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
+              }`}
+          >
+            {isLoading ? (
+              <ArrowPathIcon className="w-6 h-6 animate-spin text-white" />
+            ) : (
+              <PaperAirplaneIcon className="w-6 h-6 text-white" />
+            )}
           </button>
+
         </div>
 
         {error && <p className="text-red-500 text-sm">{error}</p>}
