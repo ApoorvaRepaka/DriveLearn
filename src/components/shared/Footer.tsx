@@ -1,6 +1,5 @@
 import { Divider } from 'antd';
 import React from 'react';
-import LangSelect from '../elements/select/LangSelect';
 
 const Footer = () => {
     return (

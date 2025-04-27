@@ -1,9 +1,12 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiRequest, NextApiResponse } from 'next';
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import bcrypt from 'bcrypt';
 
+// Load environment variables
 dotenv.config();
 
+// Create a PostgreSQL connection pool
 const pool = new Pool({
   user: process.env.PG_USER,
   host: process.env.PG_HOST,
@@ -13,54 +16,48 @@ const pool = new Pool({
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method === 'POST') {
+    const { name, email, password, board } = req.body;
 
-  const { question } = req.body;
-  const token = req.headers.authorization?.split(' ')[1];
-
-  if (!token || !question) {
-    return res.status(400).json({ error: 'Missing token or question' });
-  }
-
-  try {
-    // Get user info (with board)
-    const userResult = await pool.query('SELECT id, board FROM users WHERE token = $1', [token]);
-    if (userResult.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid token' });
+    if (!name || !email || !password || !board) {
+      console.log('Validation failed: Missing fields');
+      return res.status(400).json({ message: 'All fields are required' });
     }
 
-    const user = userResult.rows[0];
-    const prompt = `You are a tutor for the ${user.board} board. Answer the following: ${question}`;
+    try {
+      console.log('Checking if user exists...');
+      const checkUserQuery = 'SELECT * FROM users WHERE email = $1';
+      const checkUserResult = await pool.query(checkUserQuery, [email]);
+      console.log('User check result:', checkUserResult.rows);
 
-    // OpenRouter API call
-    const openRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "HTTP-Referer": process.env.SITE_URL || "",
-        "X-Title": process.env.SITE_NAME || "",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "deepseek/deepseek-r1-zero:free",
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
+      if (checkUserResult.rows.length > 0) {
+        console.log('User already exists');
+        return res.status(400).json({ message: 'User already exists' });
+      }
 
-    const data = await openRes.json();
-    const answer = data.choices?.[0]?.message?.content || 'No answer received.';
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      const insertQuery =
+        'INSERT INTO users (name, email, password, board) VALUES ($1, $2, $3, $4)';
+      const values = [name, email, hashedPassword, board];
+      const insertResult = await pool.query(insertQuery, values);
+      
 
-    // Save question & answer to history
-    await pool.query(
-      'INSERT INTO history (user_id, question, answer) VALUES ($1, $2, $3)',
-      [user.id, question, answer]
-    );
+      console.log('User registered successfully');
+      res.status(201).json({ message: 'User registered successfully' });
+    } catch (error) {
+      console.error('Error during signup:', error);
 
-    return res.status(200).json({ answer });
-  } catch (err) {
-    console.error('Error in /api/ask:', err);
-    return res.status(500).json({ error: 'Internal server error' });
+      // Handle specific database errors
+      if ((error as { code: string }).code === '23505') {
+        // Unique constraint violation (e.g., duplicate email)
+        return res.status(400).json({ message: 'Email already in use' });
+      }
+
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  } else {
+    res.setHeader('Allow', ['POST']);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }

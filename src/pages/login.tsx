@@ -1,6 +1,7 @@
 import React from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import MainButton from '@/components/elements/button/MainButton';
 import TextField from '@mui/material/TextField';
@@ -12,6 +13,8 @@ const validationSchema = yup.object({
 });
 
 const Login = () => {
+  const router = useRouter();
+
   const formik = useFormik({
     initialValues: {
       email: '',
@@ -25,31 +28,28 @@ const Login = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(values),
         });
-  
-        const data = await res.json();
-  
+
         if (res.ok) {
-          // Store token and user ID if received
-          localStorage.setItem('token', data.token); 
-          localStorage.setItem('userId', data.user?.id); 
-  
-          window.location.href = '/dashboard';
+          const data = await res.json();
+          console.log('Login response:', data); // Debugging log
+          localStorage.setItem('userId', data.userId); // Store userId in localStorage
+          router.push('/dashboard'); // Redirect to dashboard
         } else {
-          alert(data.message || 'Login failed');
+          const errorData = await res.json();
+          formik.setErrors({ email: errorData.message }); // Display error message
         }
       } catch (err) {
         console.error('Login error:', err);
+        alert('An error occurred. Please try again.');
       }
-    }
-  }); // ✅ Add this closing brace
-  
-    
+    },
+  });
 
   return (
     <>
       <Head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Outfit&display=swap" rel="stylesheet" />
       </Head>
 
@@ -101,8 +101,7 @@ const Login = () => {
 
         <div className="w-[62%] flex items-center justify-center">
           <img src="/images/projectSignIn.jpg" alt="Signup Visual" className="max-w-full h-auto" />
-      </div>
-      
+        </div>
       </div>
     </>
   );

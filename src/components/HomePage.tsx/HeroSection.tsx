@@ -1,5 +1,6 @@
 import React from 'react';
 import YellowButton from '../elements/button/YellowButton';
+import Link from 'next/link';
 
 const HeroSection = () => {
     return (
@@ -11,7 +12,9 @@ const HeroSection = () => {
               <h1 className='text-5xl mt-32  pl-10 '>Make Your Future Bright</h1>
               <h3 className='w-1/2 text-lg pl-10  font-medium'>AI-powered learning platform designed to support students from CBSE, ICSE, and State Boards. With personalized explanations, voice/text queries, and smart visuals, it helps students learn better and make their future bright.</h3>
               <div className='flex justify-end w-5/6 mt-3 z-10'>
-              <YellowButton text={'Start Learning'} />
+              <Link href={'/SignUp'}>
+                <YellowButton text={'Start Learning'} />
+              </Link>
               </div>
 
              {/* <h2>s;'mpmswcmpcs</h2>
