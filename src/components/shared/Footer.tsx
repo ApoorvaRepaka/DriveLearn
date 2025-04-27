@@ -1,66 +1,61 @@
-import { Divider } from 'antd';
 import React from 'react';
+import { Divider } from 'antd';
 
 const Footer = () => {
     return (
-        <div className='bg-secondbg h-[430px] pt-10 mt-44 relative'>
-            <div className='topfooter pl-48 pr-16 uppercase text-sm font-medium flex gap-x-24 justify-between'>
-                <div className='w-3/5  flex justify-between text-sm text-left font-normal'>
-                    <ul>
-                    <li className='text-base font-semibold mb-2'>content</li>
-                    <li>new services </li>
-                    <li>blog</li>
-                    </ul>
-                    <ul>
-                    <li className='text-base font-semibold mb-2'>links </li>
-                    <li>about us </li>
-                    <li>join us</li>
-                    <li>business</li>
-                    <li>jobs</li>
-                    </ul>
-                    <ul>
-                    <li className='text-base font-semibold mb-2'>legal</li>
-                    <li>terms and conditions</li>
-                    <li>license agreement</li>
-                    <li>privecy policy</li>
-                    <li>cookies setting </li>
-
-                    </ul>
-                    <ul>
-                    <li className='text-base font-semibold mb-2'>support</li>
-                    <li>FAQ</li>
-                    <li>contact</li>
-                    </ul>
+        <footer className="bg-secondbg py-10 sm:py-12 md:py-16 px-6 sm:px-12 md:px-24 lg:px-48 text-gray-800">
+            
+            {/* Top Footer Section */}
+            <div className="flex flex-col md:flex-row gap-12 justify-between">
+                
+                {/* Information Columns */}
+                <div className="w-full md:w-3/5 grid grid-cols-2 md:grid-cols-4 gap-8">
+                    {[
+                        { title: "Content", items: ["New Services", "Blog"] },
+                        { title: "Links", items: ["About Us", "Join Us", "Business", "Jobs"] },
+                        { title: "Legal", items: ["Terms & Conditions", "License Agreement", "Privacy Policy", "Cookies Settings"] },
+                        { title: "Support", items: ["FAQ", "Contact"] },
+                    ].map((section, index) => (
+                        <ul key={index} className="space-y-2">
+                            <li className="text-lg font-semibold">{section.title}</li>
+                            {section.items.map((item, idx) => (
+                                <li key={idx} className="text-sm hover:text-gray-500 transition-all duration-200">{item}</li>
+                            ))}
+                        </ul>
+                    ))}
                 </div>
-                <div className='w-1/3 flex flex-col items-center uppercase '>
-                    <h2 className='text-base font-semibold'>social media </h2>
-                    <div className='mt-10 flex justify-center gap-x-8'>
-                        <img src="../../images/lenkdein.png" className='h-7' alt='' />
-                        <img src="../../images/facebook.png" className='h-7' alt='' />
-                        <img src="../../images/insta.png" className='h-7' alt='' />
-                        <img src="../../images/tiktok.png" className='h-7' alt='' />
-                        <img src="../../images/whtasapp.png" className='h-7' alt='' />
+
+                {/* Social Media Section */}
+                <div className="w-full md:w-1/3 text-center md:text-left">
+                    <h2 className="text-lg font-semibold mb-4">Follow Us</h2>
+                    <div className="flex justify-center md:justify-start gap-4">
+                        {["linkedin", "facebook", "insta", "tiktok", "whatsapp"].map((platform) => (
+                            <img 
+                                key={platform} 
+                                src={`/images/${platform}.png`} 
+                                className="h-7 w-7 hover:scale-110 transition-transform duration-200" 
+                                alt={platform} 
+                            />
+                        ))}
                     </div>
-                    
-
-                </div>
-            </div>
-            <div className='flex justify-center flex-col items-center my-7 '>
-                <div className='w-3/4'>
-                <Divider style={{borderWidth : '1px' , borderColor : '#25323B', opacity : '0.7'}} />
-                <div className='flex justify-between items-center px-5 mt-10'>
-                <div className='flex items-end gap-x-4  '>
-                <img src="../../images/logo.png" className='h-9' alt='' /> 
-                <span className='capitalize text-base font-semibold'>© Copyrights Promptly AI. All rights reserved.</span>
-                </div>
-                </div>
                 </div>
             </div>
 
+            {/* Divider & Copyright Section */}
+            <div className="flex flex-col items-center my-8">
+                <Divider style={{ borderWidth: "1px", borderColor: "#25323B", opacity: "0.6" }} />
+                <div className="flex flex-col md:flex-row justify-between items-center w-full px-5 mt-6 text-gray-600">
+                <img src="/images/logo.jpeg" alt="Logo" className="h-16 w-auto max-w-full" />
 
-            <div className='absolute capitalize font-medium  flex justify-evenly items-center bottom-0 text-secondbg w-full bg-mainblack h-16'>
+                    <span className="text-sm sm:text-base font-semibold">© Copyrights Promptly AI. All rights reserved.</span>
+                </div>
             </div>
-        </div>
+
+            {/* Bottom Footer Bar */}
+            <div className="bg-mainblack text-white flex items-center justify-center h-16 text-center text-sm sm:text-base">
+                <span>Your trusted learning companion.</span>
+            </div>
+        </footer>
     );
 };
 

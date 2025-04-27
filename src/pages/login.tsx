@@ -16,10 +16,7 @@ const Login = () => {
   const router = useRouter();
 
   const formik = useFormik({
-    initialValues: {
-      email: '',
-      password: '',
-    },
+    initialValues: { email: '', password: '' },
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
@@ -31,12 +28,11 @@ const Login = () => {
 
         if (res.ok) {
           const data = await res.json();
-          console.log('Login response:', data); // Debugging log
-          localStorage.setItem('userId', data.userId); // Store userId in localStorage
-          router.push('/dashboard'); // Redirect to dashboard
+          localStorage.setItem('userId', data.userId);
+          router.push('/dashboard');
         } else {
           const errorData = await res.json();
-          formik.setErrors({ email: errorData.message }); // Display error message
+          formik.setErrors({ email: errorData.message });
         }
       } catch (err) {
         console.error('Login error:', err);
@@ -49,58 +45,42 @@ const Login = () => {
     <>
       <Head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Outfit&display=swap" rel="stylesheet" />
       </Head>
 
-      <div className="bg-mainbg min-h-screen flex justify-between pt-7 px-16 w-full">
-        <div className="pt-1 pb-8 w-[29%]">
-          <h2 className="text-2xl font-bold mb-1">Welcome Back</h2>
-          <p className="mb-4">Login to your account</p>
+      <div className="bg-mainbg min-h-screen flex flex-col md:flex-row justify-center items-center px-6 md:px-12 lg:px-20">
+        <div className="w-full md:w-[45%] max-w-xs sm:max-w-sm md:max-w-lg bg-white shadow-lg rounded-lg p-6 sm:p-8 text-center md:text-left">
+          <h2 className="text-3xl font-bold mb-3 text-gray-800">Welcome Back</h2>
+          <p className="text-gray-600 text-base sm:text-lg mb-6">Login to your account</p>
 
-          <form className="pt-3" onSubmit={formik.handleSubmit}>
-            <TextField
-              size="small"
-              variant="standard"
-              fullWidth
-              id="email"
-              name="email"
-              label="Email"
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              error={formik.touched.email && Boolean(formik.errors.email)}
-              helperText={formik.touched.email && formik.errors.email}
-              className="mb-4"
-            />
-
-            <TextField
-              size="small"
-              variant="standard"
-              fullWidth
-              id="password"
-              name="password"
-              label="Password"
-              type="password"
-              value={formik.values.password}
-              onChange={formik.handleChange}
-              error={formik.touched.password && Boolean(formik.errors.password)}
-              helperText={formik.touched.password && formik.errors.password}
-              className="mb-6"
-            />
+          <form className="space-y-5" onSubmit={formik.handleSubmit}>
+            {['email', 'password'].map((field) => (
+              <TextField
+                key={field}
+                size="small"
+                variant="outlined"
+                fullWidth
+                id={field}
+                name={field}
+                label={field.charAt(0).toUpperCase() + field.slice(1)}
+                type={field === 'password' ? 'password' : 'text'}
+                value={formik.values[field as keyof typeof formik.values] || ""}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={Boolean(formik.touched[field as keyof typeof formik.touched] && formik.errors[field as keyof typeof formik.errors])}
+                helperText={formik.touched[field as keyof typeof formik.touched] ? formik.errors[field as keyof typeof formik.errors] : ""}
+              />
+            ))}
 
             <MainButton text="Login" />
-
-            <div className="flex justify-center mt-3 text-sm">
-              <span>Do not have an account?</span>
-              <Link href="/SignUp" className="mx-2 text-[#1F59EE]">
-                Sign Up
-              </Link>
-            </div>
+            <p className="text-sm mt-4">New Here? Create an Account! <Link href="/SignUp" className="text-blue-600 hover:underline">Sign Up</Link></p>
           </form>
         </div>
 
-        <div className="w-[62%] flex items-center justify-center">
-          <img src="/images/projectSignIn.jpg" alt="Signup Visual" className="max-w-full h-auto" />
+        {/* Image Section */}
+        <div className="hidden md:block w-[50%] flex items-center justify-center">
+          <img src="/images/projectSignIn.jpg" alt="Signup Visual" className="max-w-full h-auto rounded-lg shadow-md hover:scale-105 transition-all duration-300" />
         </div>
       </div>
     </>

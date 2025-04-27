@@ -12,19 +12,24 @@ const pool = new Pool({
   host: process.env.PG_HOST,
   database: process.env.PG_DATABASE,
   password: process.env.PG_PASSWORD,
-  port: parseInt(process.env.PG_PORT || '5433'),
+  port: parseInt(process.env.PG_PORT || '5432'),
+  ssl: {
+    rejectUnauthorized: false, // Allows self-signed certificates
+  },
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     const { name, email, password, board } = req.body;
 
+    // Validate input fields
     if (!name || !email || !password || !board) {
       console.log('Validation failed: Missing fields');
       return res.status(400).json({ message: 'All fields are required' });
     }
 
     try {
+      // Check if the user already exists
       console.log('Checking if user exists...');
       const checkUserQuery = 'SELECT * FROM users WHERE email = $1';
       const checkUserResult = await pool.query(checkUserQuery, [email]);
@@ -35,28 +40,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ message: 'User already exists' });
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-      
+      // Hash the password
+      console.log('Hashing password...');
+      const hashedPassword = await bcrypt.hash(password, 12); // Increased salt rounds for better security
+
+      // Insert the new user into the database
+      console.log('Inserting new user...');
       const insertQuery =
-        'INSERT INTO users (name, email, password, board) VALUES ($1, $2, $3, $4)';
+        'INSERT INTO users (name, email, password, board) VALUES ($1, $2, $3, $4) RETURNING id, created_at';
       const values = [name, email, hashedPassword, board];
       const insertResult = await pool.query(insertQuery, values);
-      
+      console.log('Insert result:', insertResult.rows[0]);
 
+      // Respond with success
       console.log('User registered successfully');
-      res.status(201).json({ message: 'User registered successfully' });
-    } catch (error) {
+      res.status(201).json({
+        message: 'User registered successfully',
+        user: {
+          id: insertResult.rows[0].id,
+          name,
+          email,
+          board,
+          created_at: insertResult.rows[0].created_at,
+        },
+      });
+    } catch (error: any) {
       console.error('Error during signup:', error);
 
       // Handle specific database errors
-      if ((error as { code: string }).code === '23505') {
+      if (error.code === '23505') {
         // Unique constraint violation (e.g., duplicate email)
         return res.status(400).json({ message: 'Email already in use' });
       }
 
-      res.status(500).json({ message: 'Internal server error' });
+      // Log and return a generic error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error details:', errorMessage); // Log the error message internally
+      res.status(500).json({ message: 'Internal server error', error: errorMessage });
     }
   } else {
+    // Handle unsupported HTTP methods
     res.setHeader('Allow', ['POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }

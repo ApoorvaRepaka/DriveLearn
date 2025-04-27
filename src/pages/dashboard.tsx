@@ -48,16 +48,9 @@ export default function Home() {
       const res = await axios.post('/api/ask', { question, userId });
 
       setAnswer(res.data.answer);
-
-      // No need to push to local history. History will refresh from DB
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        console.error('Axios error:', err.response?.data || err.message);
-        setError(err.response?.data?.error || 'An error occurred. Please try again.');
-      } else {
-        console.error('Unexpected error:', err);
-        setError('An unexpected error occurred. Please try again.');
-      }
+      console.error('Error:', err);
+      setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -77,10 +70,17 @@ export default function Home() {
     }
 
     if (!showHistory) {
-      // Fetch history only when opening
       try {
         const res = await axios.post('/api/history', { userId });
-        setHistory(res.data.history); // assuming backend sends { history: [...] }
+        console.log('Full API Response:', res.data); // Debugging log
+
+        if (res.data.success && Array.isArray(res.data.data?.history)) {
+          console.log('History:', res.data.data.history);
+          setHistory(res.data.data.history);
+        } else {
+          console.log('No history found.');
+          setHistory([]);
+        }
       } catch (err) {
         console.error('Error fetching history:', err);
         alert('Failed to load history.');
@@ -88,65 +88,74 @@ export default function Home() {
     }
 
     setShowHistory((prev) => !prev);
-  };
+};
+
 
   return (
-    <main className="relative max-w-3xl mx-auto p-4 space-y-4">
-      {/* History button top-left */}
-      <button
-        onClick={toggleHistory}
-        className="absolute top-4 left-4 bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700"
-      >
-        {showHistory ? 'Hide History' : 'Show History'}
-      </button>
+    <div className="min-h-screen flex flex-col items-center px-8 sm:px-12 md:px-20 lg:px-32 xl:px-40 bg-gradient-to-b from-[#f9f6e7] to-white w-full">
+      <main className="relative max-w-5xl w-full bg-white shadow-lg p-8 rounded-lg mt-12 sm:mt-16 space-y-6">
 
-      {/* Logout button top-right */}
-      <button
-        onClick={handleLogout}
-        className="absolute top-4 right-4 bg-red-600 text-white py-1 px-3 rounded hover:bg-red-700"
-      >
-        Logout
-      </button>
+        {/* Top Buttons - Logout & History */}
+        <div className="flex justify-between">
+          <button
+            onClick={toggleHistory}
+            className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-all shadow-md"
+          >
+            {showHistory ? 'Hide History' : 'Show History'}
+          </button>
 
-      <h1 className="text-3xl font-bold text-center">📘 AI Tutor</h1>
-
-      {/* History Panel */}
-      {showHistory && (
-        <div className="bg-gray-100 p-4 rounded shadow mt-4">
-          <h2 className="text-xl font-semibold mb-2">📜 Previous Questions</h2>
-          {history.length > 0 ? (
-            <ul className="list-disc list-inside space-y-1">
-              {history.map((q, index) => (
-                <li key={index} className="text-gray-700">{q}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">No previous questions yet.</p>
-          )}
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 transition-all shadow-md"
+          >
+            Logout
+          </button>
         </div>
-      )}
 
-      {/* Input Area */}
-      <textarea
-        placeholder="Ask your question here..."
-        value={question}
-        onChange={(e) => setQuestion(e.target.value)}
-        className="w-full p-2 border rounded"
-        rows={4}
-      />
-      {error && <p className="text-red-500">{error}</p>}
+        <h1 className="text-3xl sm:text-4xl font-bold text-center">📘 AI Tutor</h1>
 
-      <VoiceInput setQuestion={setQuestion} />
+        {/* History Panel */}
+        {showHistory && (
+          <div className="bg-gray-100 p-6 rounded shadow">
+            <h2 className="text-xl font-semibold mb-3">📜 Previous Questions</h2>
+            {Array.isArray(history) && history.length > 0 ? (
+              <ul className="list-disc list-inside space-y-2">
+                {history.map((q, index) => (
+                  <li key={index} className="text-gray-700">{q}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500">No previous questions yet.</p>
+            )}
+          </div>
+        )}
 
-      <button
-        onClick={handleAsk}
-        className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
-        disabled={isLoading}
-      >
-        {isLoading ? 'Generating...' : 'Ask Question'}
-      </button>
+        {/* Input Area */}
+        <textarea
+          placeholder="Ask your question here..."
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          className="w-full p-4 border rounded-md focus:ring focus:ring-blue-300 text-base sm:text-lg"
+          rows={4}
+        />
+        {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      <ResponseDisplay answer={answer} isLoading={isLoading} />
-    </main>
+        <VoiceInput setQuestion={setQuestion} />
+
+        <div className="flex justify-center">
+          <button
+            onClick={handleAsk}
+            className="w-3/4 bg-blue-600 text-white py-3 rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-300"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Generating...' : 'Ask Question'}
+          </button>
+        </div>
+
+
+
+        <ResponseDisplay answer={answer} isLoading={isLoading} />
+      </main>
+    </div>
   );
 }

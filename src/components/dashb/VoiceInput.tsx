@@ -23,14 +23,14 @@ export default function VoiceInput({ setQuestion }: Props) {
 
   useEffect(() => {
     if (listening) {
-      setQuestion(transcript); 
+      setQuestion(transcript);
     }
   }, [transcript, listening, setQuestion]);
 
   const handleStart = () => {
     try {
-      resetTranscript(); 
-      setQuestion(''); 
+      resetTranscript();
+      setQuestion('');
       SpeechRecognition.startListening({ continuous: true }); // Start listening
     } catch (error) {
       console.error('Error starting listening:', error);
@@ -39,8 +39,8 @@ export default function VoiceInput({ setQuestion }: Props) {
 
   const handleStop = () => {
     try {
-      SpeechRecognition.stopListening(); 
-      setQuestion(transcript); 
+      SpeechRecognition.stopListening();
+      setQuestion(transcript);
     } catch (error) {
       console.error('Error stopping listening:', error);
     }
@@ -49,28 +49,39 @@ export default function VoiceInput({ setQuestion }: Props) {
   if (!isClient) return null;
 
   if (!browserSupportsSpeechRecognition) {
-    console.error('Speech recognition is not supported in this browser.'); // Debugging log
-    return <p className="text-red-600">❌ Your browser doesn’t support speech recognition.</p>;
+    console.error('Speech recognition is not supported in this browser.');
+    return <p className="text-red-600 text-center font-medium">❌ Your browser doesn’t support speech recognition.</p>;
   }
 
   return (
-    <div className="my-4">
-      <div className="flex gap-2 items-center">
+    <div className="my-6 mx-auto max-w-lg sm:max-w-xl md:max-w-2xl bg-white shadow-lg rounded-lg p-6">
+      <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">🎙️ Voice Input</h2>
+
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
         <button
           onClick={handleStart}
-          className="bg-green-600 text-white px-3 py-1 rounded"
+          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all duration-300 shadow-md"
         >
           🎤 Start Voice
         </button>
+
         <button
           onClick={handleStop}
-          className="bg-red-600 text-white px-3 py-1 rounded"
+          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-all duration-300 shadow-md"
         >
           🛑 Stop
         </button>
-        <span className="text-sm">{listening ? '🎙️ Listening...' : 'Click to speak'}</span>
       </div>
-      <p className="mt-2 text-gray-600 italic">🗣️ {transcript}</p>
+
+      <p className="mt-4 text-center text-gray-600 italic text-sm sm:text-base">
+        {listening ? '🎙️ Listening...' : 'Click to speak'}
+      </p>
+
+      <div className="mt-4 bg-gray-100 p-4 rounded-lg shadow-md">
+        <p className="text-gray-700 text-sm sm:text-base whitespace-pre-wrap font-medium">
+          {transcript || "No speech detected yet. Try speaking!"}
+        </p>
+      </div>
     </div>
   );
 }
